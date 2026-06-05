@@ -1,0 +1,15 @@
+venv/
+ENV/
+.git/
+.gitignore
+.dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+data/chroma_db/
+data/static_data/*
+*.zip
+.env
