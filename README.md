@@ -18,12 +18,6 @@ The goal of this capstone project is to develop a Generative AI–powered applic
 ---
 
 ## 🚀 Key Technical Enhancements
-
-# =====================================================================
-# FIX COMMENT: Cleaned up duplicated entry definitions across list logs.
-# Replaced direct edge mutation notes with explicit 'state_incrementer_node' documentation.
-# Added structured output handling logs to match your new NoneType exception fix.
-# =====================================================================
 *   **Cyclic Self-Correction Loop**: Outfitted with an adaptive loop mechanism. When the Validator Agent flags an ungrounded claim or mismatch (`isValidated=False`), control routes to a non-mutating conditional router that shifts state updating tasks into a dedicated backend state incrementer node. This forces the system to dynamically rewrite an alternative set of search keywords to pull a fresh context pool from ChromaDB.
 *   **Token Drainage Guardrails**: Enforces a strict 3-attempt ceiling counter on the validation loop. If an agent cannot verify its answer after 3 attempts, it routes to a fallback node to abort gracefully and save your API budget with an unverified notice warning.
 *   **Memory Optimization**: The Streamlit user interface uses a defensive sliding-window limit to prevent page performance lag over long chat sessions.
