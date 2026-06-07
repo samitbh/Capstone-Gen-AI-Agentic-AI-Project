@@ -18,6 +18,9 @@ This application implements an enterprise-grade Retrieval-Augmented Generation (
 4. **Vector Storage Layer (`app/services/vector_store.py`)**: Houses the text chunker splitter (1000 size, 150 overlap) and interfaces persistently with local `ChromaDB` storage utilizing Google's modern `gemini-embedding-001` framework (3072 dimensions).
 5. **Multi-Agent Orchestration Graph (`app/agents/graph.py`)**: Houses the text chunker splitter (1000 size, 150 overlap) and interfaces persistently with local `ChromaDB` storage utilizing Google's modern `gemini-embedding-001` framework (3072 dimensions). It evaluates stored segment metadata filters via a custom `check_existing_document` abstraction layer to identify file duplicates, short-circuiting vector routines if signatures match or cleanly purging outdated document chunks using internal tracking IDs before updating records
 
+## System Architecture Diagram
+![System Architecture Diagram](assets/diagrams/architecture.png)
+
 ---
 
 ## 🤖 2. Autonomous Agent Roles & Bounded State Workflows
