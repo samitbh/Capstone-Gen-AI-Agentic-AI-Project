@@ -21,6 +21,9 @@ __pycache__/
 data/chroma_db/
 *.db
 
+# Ignore local test result screenshots to prevent uploading large image files and cluttering the repository
+assets/screenshots/*
+
 # Ignore raw data ingestion test assets to keep the code repository light
 data/static_data/
 

@@ -11,5 +11,6 @@ __pycache__/
 Thumbs.db
 data/chroma_db/
 data/static_data/*
+assets/screenshots/*
 *.zip
 .env

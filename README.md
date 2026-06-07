@@ -51,6 +51,12 @@ Capstone-Gen-AI-Agentic-AI-Project/
 │       ├── __init__.py
 │       ├── ingestion.py         # Multi-format document parser engine
 │       └── vector_store.py      # ChromaDB interface and Google embeddings
+├── assets/                      # Assets 
+│   ├── diagrams/            
+│   │   └── architecture/        # Architecture blueprints 
+│   └── screenshots/         
+│       ├── test-results/        # Terminal test snapshots
+│       ├── Langfuse-Dashboard/  # Langfuse Dashboard snapshots
 ├── data/
 │   └── chroma_db/               # On-disk persistent database storage directory
 ├── .dockerignore                # Container copy exclusion map
