@@ -14,7 +14,7 @@ This application implements an enterprise-grade Retrieval-Augmented Generation (
 ### Component Map & Data Lifecycles
 1. **User Interface Layer (`main.py`)**: A Streamlit web application running a sliding-window message limit to prevent browser lag, handling file upload streams, conversational history, and interactive agent diagnostic tracers.
 2. **Configuration Engine (`app/core/config.py`)**: A self-validating environment broker built with Pydantic Settings (`v2.13.4`) that handles local paths and cloud analytics keys from `.env`.
-3. **Multi-Format Ingestion Processor (`app/services/ingestion.py`)**: A modular data parsing hub leveraging `PyPDF2` and `pandas` to isolate text matrices from PDF, TXT, CSV, XLSX, JSON, and YAML formats.
+3. **Multi-Format Ingestion Processor (`app/services/ingestion.py`)**: A modular data parsing hub leveraging `PyPDF2` and `pandas` to isolate text matrices from PDF, TXT, CSV, XLSX, JSON, and YAML formats. It computes a unique file hash to check against existing version records, immediately skipping the ingestion workflow if a matching duplicate is detected.
 4. **Vector Storage Layer (`app/services/vector_store.py`)**: Houses the text chunker splitter (1000 size, 150 overlap) and interfaces persistently with local `ChromaDB` storage utilizing Google's modern `gemini-embedding-001` framework (3072 dimensions).
 5. **Multi-Agent Orchestration Graph (`app/agents/graph.py`)**: A compiled cyclic state router built on top of LangGraph (`v0.2.x`+ ecosystem) containing explicit edge dictionary mapping parameters and a deterministic fallback mechanism to intercept infinite loops.
 
@@ -25,38 +25,44 @@ This application implements an enterprise-grade Retrieval-Augmented Generation (
 The framework relies on a centralized state dictionary layout (`AgentState`) passed sequentially between specialized AI processing nodes. Every reasoning step is driven by **Google Gemini-2.5-Flash-Lite** with temperature settings locked at `0.0` to force factual correctness.
 
 ```text
-       +--------------------------------------------+
+       [ User Enters Natural Language Query via Streamlit ]
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │     entry_router    │ (Conditional Screening)
+                    └─────────────────────┘
+                               │
+         ┌─────────────────────┴─────────────────────┐
+         ▼ (If Casual Greeting)                      ▼ (If Operational Query)
+┌───────────────────────┐                  ┌───────────────────────┐
+│  casual_response_node │                  │     planner_node      │ ◄─────────┐
+└───────────────────────┘                  └───────────────────────┘           │
+         │                                           │                         │
+         │                                           ▼                         │
+         │                                 ┌───────────────────────┐           │
+         │                                 │    retriever_node     │           │
+         │                                 └───────────────────────┘           │
+         │                                           │                         │
+         │                                           ▼                         │
+         │                                 ┌───────────────────────┐           │
+         │                                 │  joint_reasoning_and  │           │
+         │                                 │   _validation_node    │           │
+         │                                 └───────────────────────┘           │
+         │                                           │                         │
+         │                                           ▼                         │
+         │                                 ┌───────────────────────┐           │
+         │                                 │   router_condition    │ (Read-Only)
+         │                                 └───────────────────────┘           │
+         │                                           │                         │
+         │            ┌──────────────────────────────┼────────────────────────┐│
+         │            ▼ (Grounded / Insufficient)    ▼ (Failed & Retry < 2)   ▼▼ (Failed & Retry >= 2)
+         │  ┌───────────────────┐          ┌───────────────────────┐  ┌─────────────┐
+         │  │     [ END ]       │          │state_incrementer_node │  │fallback_end_│
+         │  └───────────────────┘          └───────────────────────┘  │    node     │
+         │            ▲                                │              └─────────────┘
+         │            │                                └───────────────────────┘
+         └────────────┴───────────────────────────────────────────────────────┘
 
-       |             [ START: USER QUERY ]          |
-       +--------------------------------------------+
-
-                             |
-                             v
-                     [ PLANNER AGENT ]
-                             |
-                             v
-               +---> [ RETRIEVER AGENT ] (retry_count + 1)
-
-               |             |
-               |             v
-
-               |     [ REASONING AGENT ]
-               |             |
-               |             v
-
-               |     [ VALIDATOR AGENT ]
-               |             |
-               +--- (If Response INVALID & retries < 3)
-
-                             |
-                (If Response INVALID & retries >= 3)
-                             |
-                             v
-                  [ FALLBACK END NODE ] 
-                     (Graceful Warning)
-                             |
-                             v
-                        [ END STATE ]
 ```
 
 ### Detailed Agent Network Matrix
@@ -68,7 +74,7 @@ The framework relies on a centralized state dictionary layout (`AgentState`) pas
 *   **Fallback End Node (`fallback_end_node`)**: An emergency exit node. If an answer fails validation 3 times in a row, the graph stops execution and cleanly appends a compliance warning note to the response string.
 
 ### Bounded Router Condition (`router_condition`)
-Your LangGraph engine calls this routing function automatically upon exiting the validator. If an answer is marked `INVALID`, it checks the `retry_count`. If the loop count is below 3, it routes the state back to the retriever to self-correct. If it hits or exceeds 3, it diverts the path straight to the fallback node to abort execution and protect your API budget.
+Your LangGraph engine calls this routing function automatically upon exiting the validator. If an answer is marked `INVALID`, it checks the `retry_count`. If the loop count is below 2, it routes the state back to the retriever to self-correct. If it hits or exceeds 2, it diverts the path straight to the fallback node to abort execution and protect your API budget.
 
 ---
 

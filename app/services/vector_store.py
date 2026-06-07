@@ -38,6 +38,26 @@ class VectorStoreService:
             collection_name=settings.COLLECTION_NAME
         )
 
+    def check_existing_document(self, filename: str) -> tuple[bool, str | None]:
+        """Safely checks if file elements exist and returns their content signature hash."""
+        try:
+            res = self.db.get(where={"source_file": filename})
+            if res and res.get("metadatas"):
+                return True, res["metadatas"][0].get("version_hash")
+            return False, None
+        except Exception:
+            return False, None
+
+    def delete_document_vectors(self, filename: str):
+        """Clears vectors by utilizing public LangChain wrapper abstraction layers."""
+        try:
+            res = self.db.get(where={"source_file": filename})
+            if res and res.get("ids"):
+                self.db.delete(ids=res["ids"])
+        except Exception as e:
+            raise RuntimeError(
+                f"Database cleansing failure for {filename}: {str(e)}")
+
     def process_and_store(self, text: str, metadata: dict, batch_size: int = 5):
         """
         Splits incoming raw document strings into chunks, generates 
@@ -48,8 +68,8 @@ class VectorStoreService:
         chunks = self.splitter.split_text(text)
         total_chunks = len(chunks)
 
-        # Tag every single chunk with metadata (e.g., the source file name)
-        metadatas = [metadata for _ in chunks]
+        # Tag each chunk with source metadata for traceability and future reference
+        metadatas = [metadata.copy() for _ in chunks]
 
         # Paced Batch Processing: Upload chunks in safe groups of 10
         for i in range(0, total_chunks, batch_size):

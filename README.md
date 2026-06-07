@@ -19,11 +19,19 @@ The goal of this capstone project is to develop a Generative AI–powered applic
 
 ## 🚀 Key Technical Enhancements
 
-*   **Cyclic Self-Correction Loop**: The Validator Agent automatically intercepts ungrounded outputs and loops the state back to the Retriever to pull fresh context snippets.
-*   **Token Drainage Guardrails**: Enforces a strict 3-attempt ceiling counter on the validation loop. If an agent cannot verify its answer after 3 attempts, it routes to a fallback node to abort gracefully and save your API budget.
+# =====================================================================
+# FIX COMMENT: Cleaned up duplicated entry definitions across list logs.
+# Replaced direct edge mutation notes with explicit 'state_incrementer_node' documentation.
+# Added structured output handling logs to match your new NoneType exception fix.
+# =====================================================================
+*   **Cyclic Self-Correction Loop**: Outfitted with an adaptive loop mechanism. When the Validator Agent flags an ungrounded claim or mismatch (`isValidated=False`), control routes to a non-mutating conditional router that shifts state updating tasks into a dedicated backend state incrementer node. This forces the system to dynamically rewrite an alternative set of search keywords to pull a fresh context pool from ChromaDB.
+*   **Token Drainage Guardrails**: Enforces a strict 3-attempt ceiling counter on the validation loop. If an agent cannot verify its answer after 3 attempts, it routes to a fallback node to abort gracefully and save your API budget with an unverified notice warning.
 *   **Memory Optimization**: The Streamlit user interface uses a defensive sliding-window limit to prevent page performance lag over long chat sessions.
-*   **Langfuse Live Telemetry**: Streamlit connects directly to the Langfuse Japan Cloud cluster via callback hooks...
+*   **Langfuse Live Telemetry**: Streamlit connects directly to the Langfuse Japan Cloud cluster via callback hooks.
+*   **Centralized Cloud Dashboard**: Accessible by logging into the Langfuse Cloud Console (selecting the Japan/Asia-Pacific region). Once authenticated, users can view end-to-end LangGraph visual flowcharts, trace live execution streams, analyze millisecond-level database latencies, calculate token costs, audit configurations (`temperature: 0.0`), and test prompts inside a secure playground sandbox.
 *   **Free-Tier API Quota Throttling**: Implements a paced batch-ingestion loop inside the vector storage layer (5 chunks per batch with a 1.5-second cooldown) to balance Requests-Per-Minute (RPM) and avoid 429 Quota Exhaustion errors on large file parse streams.
+*   **Front-Gate Short-Circuiting**: Incorporates an intelligent `entry_router` parsing layer that screens raw user input queries before executing any backend nodes. Simple greetings or small talk (e.g., "Hello", "Hi") are processed via static system text configurations in under 5ms, completely bypassing ChromaDB scans and Gemini API loops to ensure a \$0.00 token baseline footprint.
+*   **Structural Parsing Safeguards**: Incorporates an internal try-except interceptor wrapper inside the reasoning engine. If the LLM generates unmapped structural layouts or returns a broken structure due to missing variables, the node safely catches the exception and routes control gracefully to alternative search paths instead of crashing the process execution window.
 
 ---
 
@@ -50,6 +58,7 @@ Capstone-Gen-AI-Agentic-AI-Project/
 ├── .gitignore                   # Git exclusion manifest list
 ├── Dockerfile                   # Isolated production app containerization setup
 ├── DOCUMENTATION.md             # Detailed capstone final technical report
+├── README.txt                   # Local text readme manifest file
 ├── main.py                      # Streamlit application portal hub entry point
 └── requirements.txt             # Conflict-free, frozen package dependencies
 ```

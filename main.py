@@ -37,7 +37,13 @@ def get_langfuse_handler():
     )
 
 
-langfuse_handler = get_langfuse_handler()
+try:
+    langfuse_handler = get_langfuse_handler()
+    callbacks = [langfuse_handler]
+except Exception:
+    st.sidebar.warning("⚠️ Telemetry panel offline. Continuing locally.")
+    callbacks = []
+
 
 # 4. DIRECTORY SIDEBAR DATA INGESTION ENGINE
 with st.sidebar:
@@ -52,24 +58,36 @@ with st.sidebar:
     )
 
     # Trigger parsing logic on execution call
+
     if st.button("Index Documents into ChromaDB", use_container_width=True) and uploaded_files:
         for target_file in uploaded_files:
             with st.spinner(f"Ingesting {target_file.name}..."):
                 try:
-                    # Stream raw data streams straight into the ingestion services
                     file_payload = target_file.read()
-                    cleaned_txt = st.session_state.ingestion_service.ingest_stream(
+
+                    # Unpack both the text contents and the unique MD5 content signature
+                    cleaned_txt, version_hash = st.session_state.ingestion_service.ingest_stream(
                         file_payload, target_file.name
                     )
 
-                    # Convert to semantic chunks and commit to ChromaDB index
+                    is_duplicate, old_hash = st.session_state.vector_service.check_existing_document(
+                        target_file.name)
+                    if is_duplicate:
+                        if old_hash == version_hash:
+                            st.sidebar.warning(
+                                f"ℹ️ {target_file.name} matches current index. Skipping.")
+                            continue
+                        else:
+                            st.sidebar.info(
+                                f"🔄 Version change detected. Updating {target_file.name}...")
+                            st.session_state.vector_service.delete_document_vectors(
+                                target_file.name)
+
                     st.session_state.vector_service.process_and_store(
-                        cleaned_txt, {"source_file": target_file.name}
-                    )
+                        cleaned_txt, {"source_file": target_file.name, "version_hash": version_hash})
                     st.sidebar.success(
-                        f"✓ {target_file.name} successfully cached.")
+                        f"✓ {target_file.name} successfully updated.")
                 except Exception as error:
-                    # Captures error exceptions bubbled from the processing pipeline
                     st.sidebar.error(
                         f"Error processing {target_file.name}: {str(error)}")
 
@@ -108,7 +126,7 @@ if user_query := st.chat_input("Query your knowledge base assets..."):
                 # Trigger the LangGraph Multi-Agent network with live Langfuse callbacks context attached
                 final_execution_state = agent_graph.invoke(
                     initial_state,
-                    config={"callbacks": [langfuse_handler]}
+                    config={"callbacks": callbacks}
                 )
                 output_text = final_execution_state["response"]
 
@@ -126,7 +144,7 @@ if user_query := st.chat_input("Query your knowledge base assets..."):
                     st.markdown(
                         f"**Compliance Auditor Verified:** `{final_execution_state.get('isValidated', False)}`")
                     st.markdown(
-                        f"**Total Validation Retries Used:** `{final_execution_state.get('retry_count', 0)} / 3`")
+                        f"**Total Validation Retries Used:** `{final_execution_state.get('retry_count', 0)} / 2`")
 
                 # Output the verified text
                 st.markdown(output_text)

@@ -2,7 +2,7 @@
 # This module defines the AppConfig class, which uses Pydantic's BaseSettings to manage application configuration. It includes settings for Google Gemini authentication, local ChromaDB storage, and Langfuse telemetry. The constructor validates the presence of required environment variables and provides a user-friendly error message if any are missing. A global instance of the configuration is created for use throughout the application.
 import sys
 # Import necessary libraries for configuration management and validation
-from jsonschema import ValidationError
+from pydantic import ValidationError, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # application settings, database settings, and security settings. The model_config attribute specifies that the configuration should be loaded from a .env file with UTF-8 encoding.
@@ -12,9 +12,9 @@ from typing import Optional
 
 
 class AppConfig(BaseSettings):
-    # Application settings
-    # 1. Google Gemini Authentication
-    GOOGLE_API_KEY: str
+    # 1. Google Gemini Core API Access Key (Mandatory)
+    GOOGLE_API_KEY: str = Field(...,
+                                description="Google Gemini Core API Access Key")
 
     # 2. Local ChromaDB Storage Variables
     CHROMADB_PATH: str = "./data/chroma_db"

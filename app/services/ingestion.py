@@ -13,6 +13,7 @@ import json
 import logging
 import pandas as pd
 import PyPDF2
+import hashlib
 
 # Configure tracking metrics for background system logs
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +32,7 @@ class DocumentIngestionService:
 # It supports TXT, PDF, CSV, Excel, JSON, and YAML formats,
 # making it a versatile component for the document ingestion pipeline.
 #  With error handling to manage unsupported formats and decoding issues
-    def ingest_stream(self, file_payload: bytes, file_name: str) -> str:
+    def ingest_stream(self, file_payload: bytes, file_name: str) -> tuple[str, str]:
         ext = file_name.split(".")[-1].lower()
         """
         Routes the inbound file payload to its designated format extractor based on extension.
@@ -44,10 +45,12 @@ class DocumentIngestionService:
         logger.info(
             f"Initiating ingestion trace pipeline for resource asset: {file_name} [Extension: .{ext}]")
 
+        # Compute a unique cryptographic signature of the file's current contents
+        version_hash = hashlib.md5(file_payload).hexdigest()
+
         try:
             if ext == "txt":
-                # Simple text files are decoded directly into strings. The 'ignore' error handling ensures that any non-UTF-8 bytes are skipped without crashing the ingestion process.
-                return file_payload.decode("utf-8", errors="ignore")
+                cleaned_text = file_payload.decode("utf-8", errors="ignore")
             elif ext == "pdf":
                 text_buffer = []
                 pdf_file = io.BytesIO(file_payload)
@@ -56,23 +59,31 @@ class DocumentIngestionService:
                     extracted_text = page.extract_text()
                     if extracted_text:
                         text_buffer.append(extracted_text)
-                return "\n".join(text_buffer)
+                cleaned_text = "\n".join(text_buffer)
             elif ext in ["csv", "xlsx"]:
                 buffer = io.BytesIO(file_payload)
                 df = pd.read_csv(
                     buffer) if ext == "csv" else pd.read_excel(buffer)
-                return df.to_json(orient="records", indent=2)
+                cleaned_text = df.to_json(orient="records", indent=2)
             elif ext in ["json", "yaml", "yml"]:
                 raw_string = file_payload.decode("utf-8", errors="ignore")
                 if ext == "json":
-                    return json.dumps(json.loads(raw_string), indent=2)
-                return raw_string
+                    cleaned_text = json.dumps(json.loads(raw_string), indent=2)
+                else:
+                    cleaned_text = raw_string
             else:
                 raise ValueError(
-                    f"Extension .{ext} is not supported by the ingestion service.")
-        except Exception as e:
+                    f"Extension .{ext} is not supported by the ingestion service. Allowed formats: TXT, PDF, CSV, XLSX, JSON, YAML.")
+            return cleaned_text, version_hash
+
+        except TypeError as te:  # Catching type-related errors such as decoding issues or data structure mismatches
+            logger.error(
+                f"Type error processing file '{file_name}': {str(te)}")
+            raise RuntimeError(
+                f"Failed to process '{file_name}' due to type-related errors: {str(te)}")
+
+        except Exception as e:  # Catching any other unforeseen exceptions that may arise during parsing
             logger.error(
                 f"Critical execution fault processing file '{file_name}': {str(e)}")
-            # Re-raise with a clean user-facing wrapper message for the Streamlit UI layer
             raise RuntimeError(
                 f"Failed to process '{file_name}' due to structural formatting errors: {str(e)}")
