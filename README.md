@@ -1,7 +1,7 @@
 # Gen-AI-Agentic-AI-Project
 
-## 🎯 Capstone Project Objective
-The goal of this capstone project is to develop a Generative AI–powered application that enables users to query enterprise documents using autonomous AI agents. The system uses Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), and Agentic AI frameworks to retrieve relevant information, reason over it, and generate accurate, context-aware responses.
+## 🎯 Application Objective
+The goal of this Application is to develop a Generative AI–powered application that enables users to query enterprise documents using autonomous AI agents. The system uses Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), and Agentic AI frameworks to retrieve relevant information, reason over it, and generate accurate, context-aware responses.
 
 ### ✅ Completed Tasks Checklist
 *   [x] **Task 1**: Initialized modular project architecture and self-validating Pydantic core settings.
@@ -57,7 +57,7 @@ Capstone-Gen-AI-Agentic-AI-Project/
 ├── .env                         # Local runtime credentials (Secret)
 ├── .gitignore                   # Git exclusion manifest list
 ├── Dockerfile                   # Isolated production app containerization setup
-├── DOCUMENTATION.md             # Detailed capstone final technical report
+├── DOCUMENTATION.md             # Detailed final technical report
 ├── README.txt                   # Local text readme manifest file
 ├── main.py                      # Streamlit application portal hub entry point
 └── requirements.txt             # Conflict-free, frozen package dependencies

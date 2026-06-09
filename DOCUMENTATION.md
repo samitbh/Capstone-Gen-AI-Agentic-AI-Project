@@ -2,7 +2,7 @@
 ## System Architecture, Multi-Agent Operations & Evaluation Report
 
 **Project Name:** Capstone-Gen-AI-Agentic-AI-Project  
-**Course Context:** Generative AI & Agentic AI Capstone Project  
+**Context:** Generative AI & Agentic AI Application  
 **Target Environment:** Docker Containerized / Local Streamlit Deployment  
 
 ---
